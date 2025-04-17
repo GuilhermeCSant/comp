@@ -254,7 +254,7 @@ if df1 is not None and df2 is not None:
                                             if plot_data:
                                                 df_plot_detail = pd.DataFrame(plot_data)
                                                 fig_detail = px.bar(df_plot_detail, x='Coluna', y='Valor', color='Planilha', barmode='group', title=f"Comparativo Valores: '{selected_key_str}'", labels={'Coluna': 'Coluna Numérica', 'Valor': 'Valor Correspondente'}, color_discrete_sequence=px.colors.qualitative.Pastel, template="streamlit")
-                                                fig_detail.update_layout(xaxis_tickangle=-45)
+                                                fig_detail.update_layout(xaxis_tickangle=0)
                                                 st.plotly_chart(fig_detail, use_container_width=True)
                                                 st.divider()
                                             else: st.info("Sem dados numéricos válidos para gráfico.")
