@@ -16,23 +16,15 @@ st.set_page_config(
 )
 
 # --- CSS ---
-# Bloco CSS removido, pois usaremos colunas para centralizar
-# st.markdown("""
-#     <style>
-#     section[data-testid="stSidebar"] .stImage img {
-#         display: block; margin-left: auto; margin-right: auto;
-#     }
-#     </style>
-#     """, unsafe_allow_html=True)
-
-# Adicionado CSS para ajustar espaçamento da sidebar e título
 st.markdown("""
     <style>
+    section[data-testid="stSidebar"] .stImage img {
+        display: block; margin-left: auto; margin-right: auto;
+    }
     .css-1lcbmhc.e1fqkh3o0 { margin-top: -1rem; }
      h1 { padding-top: 1rem !important; }
     </style>
     """, unsafe_allow_html=True)
-
 
 # --- Funções Auxiliares ---
 @st.cache_data
@@ -127,18 +119,11 @@ st.markdown("Faça o upload de duas planilhas Excel/CSV, selecione as abas e a(s
 # --- Logo e Controles na Sidebar ---
 logo_path = "d4exp_branco.png"
 if os.path.exists(logo_path):
-    # --- CENTRALIZAR LOGO USANDO COLUNAS ---
-    left_space, img_col, right_space = st.sidebar.columns([1, 2, 1]) # Ajuste as proporções [1,1,1] ou [1,3,1] etc. conforme gosto
-    with img_col:
-        st.image(logo_path, width=150) # Mantenha a largura se desejar, ou remova para auto-ajuste
-    # -----------------------------------------
-else:
-    st.sidebar.warning(f"Logo não encontrado: {os.path.abspath(logo_path)}")
-
+    left_space, img_col, right_space = st.sidebar.columns([1, 2, 1])
+    with img_col: st.image(logo_path, width=150)
+else: st.sidebar.warning(f"Logo não encontrado: {os.path.abspath(logo_path)}")
 st.sidebar.divider()
-# Removido: Seletor de Modo
-
-st.sidebar.header("📤 Arquivos e Abas") # Header único para os controles
+st.sidebar.header("📤 Arquivos e Abas")
 uploaded_file_1 = st.sidebar.file_uploader("Planilha 1 (Base)", type=["xlsx", "xls", "csv"], key="file1")
 sheet_name_1 = None; sheet_names_1 = None
 if uploaded_file_1:
@@ -189,24 +174,22 @@ if df1 is not None and df2 is not None:
                          try: df1[key_col] = df1[key_col].astype(str); df2[key_col] = df2[key_col].astype(str);
                          except Exception as e: st.error(f"Falha ao converter chave '{key_col}': {e}"); types_ok = False; break
                 if not types_ok: key_columns = []; st.session_state['key_columns_selected'] = False
-            else: st.warning("Nenhuma coluna chave selecionada."); st.session_state['key_columns_selected'] = False
+            else:
+                # Mensagem removida daqui
+                # st.warning("Nenhuma coluna chave selecionada.")
+                st.session_state['key_columns_selected'] = False
 
     if key_columns:
         with st.spinner(f"Processando comparação..."):
             try:
                 # --- Código da comparação e exibição das 4 abas ---
-                # (Exatamente como na versão anterior funcional, com as correções de sintaxe)
                 df1_comp = df1.copy(); df2_comp = df2.copy()
                 df_merged = pd.merge(df1_comp, df2_comp, on=key_columns, how='outer', suffixes=('_Plan1', '_Plan2'), indicator=True)
                 numeric_cols_df1 = df1.select_dtypes(include=np.number).columns; numeric_cols_df2 = df2.select_dtypes(include=np.number).columns
                 common_numeric_cols = sorted(list(set(common_cols).intersection(numeric_cols_df1).intersection(numeric_cols_df2).difference(set(key_columns))))
                 if not common_numeric_cols: st.info("Nenhuma col. numérica comum (não-chave) encontrada.")
                 df_comparison, total_changes, rows_only_1, rows_only_2, rows_both = calculate_differences_merged(df_merged, common_numeric_cols, key_columns, common_cols)
-
-                tab_summary, tab_table, tab_detail, tab_charts = st.tabs([
-                    "📊 Resumo & Downloads", "📄 Tabela Comparativa", "🔍 Análise Detalhada", "📈 Gráficos Comparativos"
-                ])
-                # ... (Conteúdo das 4 abas mantido como antes) ...
+                tab_summary, tab_table, tab_detail, tab_charts = st.tabs(["📊 Resumo & Downloads", "📄 Tabela Comparativa", "🔍 Análise Detalhada", "📈 Gráficos Comparativos"])
                 with tab_summary:
                     st.header("Resumo Geral"); col1_summary, col2_summary = st.columns([1, 1]);
                     with col1_summary: st.metric("Linhas Apenas P1", rows_only_1); st.metric("Linhas Apenas P2", rows_only_2); st.metric("Linhas em Ambas", rows_both)
@@ -314,14 +297,16 @@ if df1 is not None and df2 is not None:
             except Exception as e: st.error(f"Erro Comparação: {e}"); st.exception(e)
 
     elif load_attempted:
-        st.warning("Falha ao carregar um ou ambos os arquivos para comparação.")
+        # Mensagem removida daqui
+        # st.warning("Falha ao carregar um ou ambos os arquivos para comparação.")
+        # Os erros específicos de load_data devem ser suficientes
+        pass # Não mostra nada extra se o carregamento falhou (erros já mostrados)
 
 
 # --- Mensagem inicial ---
-# Ajustada para modo único de comparação
 if not uploaded_file_1 or not uploaded_file_2:
     st.info("⬅️ Faça upload das duas planilhas na barra lateral para iniciar a comparação.")
-elif not sheet_name_1 or not sheet_name_2: # Verifica se as abas foram definidas (útil se selectbox falhar)
+elif not sheet_name_1 or not sheet_name_2: # Verifica se as abas foram definidas
      st.info("⬅️ Selecione as abas desejadas (se aplicável) para cada planilha na barra lateral.")
 
 
