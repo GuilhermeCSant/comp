@@ -29,7 +29,7 @@ st.markdown("""
 # --- Funções Auxiliares ---
 @st.cache_data
 def load_data(uploaded_file, sheet_name=0):
-    # ... (função load_data sem alterações) ...
+    # ... (função load_data mantida) ...
     if uploaded_file is None: return None
     try:
         file_content = BytesIO(uploaded_file.getvalue()); df = None; fname = uploaded_file.name.lower()
@@ -46,19 +46,19 @@ def load_data(uploaded_file, sheet_name=0):
 
 @st.cache_data
 def get_sheet_names(uploaded_file):
-    # ... (função get_sheet_names sem alterações) ...
+    # ... (função get_sheet_names mantida) ...
     if uploaded_file is None or not uploaded_file.name.lower().endswith(('.xlsx', '.xls')): return None
     try:
         file_content = BytesIO(uploaded_file.getvalue()); excel_file = pd.ExcelFile(file_content, engine='openpyxl'); return excel_file.sheet_names
     except Exception as e: return None
 
 def compare_structures(df1, df2):
-    # ... (função compare_structures sem alterações) ...
+    # ... (função compare_structures mantida) ...
     if df1 is None or df2 is None: return []
     cols1 = set(df1.columns); cols2 = set(df2.columns); common_cols = sorted(list(cols1.intersection(cols2))); return common_cols
 
 def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, common_cols):
-    # ... (função calculate_differences_merged sem alterações) ...
+    # ... (função calculate_differences_merged mantida) ...
     df_comp = df_merged.copy(); total_changes = {'Aumentou': 0, 'Diminuiu': 0, 'Igual': 0, 'Dados Ausentes': 0}
     df_comp.rename(columns={'_merge': 'Status_Linha'}, inplace=True)
     df_comp['Status_Linha'] = df_comp['Status_Linha'].replace({'left_only': 'Apenas Plan1', 'right_only': 'Apenas Plan2', 'both': 'Ambas Planilhas'})
@@ -106,11 +106,36 @@ def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, co
     except KeyError as e: st.error(f"Erro reordenar colunas: {e}"); pass
     return df_comp, total_changes, rows_only_1, rows_only_2, rows_both
 
+# --- FUNÇÃO to_excel MODIFICADA ---
 def to_excel(df):
-    # ... (função to_excel sem alterações) ...
+    """Converte um DataFrame para um arquivo Excel em memória."""
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df.to_excel(writer, index=False, sheet_name='Resultado')
-    processed_data = output.getvalue(); return processed_data
+    try:
+        # Tenta usar openpyxl como engine
+        # Certifique-se de ter instalado: pip install openpyxl
+        with pd.ExcelWriter(output, engine='openpyxl') as writer: # <--- MUDANÇA APLICADA AQUI
+            df.to_excel(writer, index=False, sheet_name='Resultado')
+        # st.info("Exportado usando engine 'openpyxl'.") # Opcional: Mensagem de feedback
+    except ImportError:
+        st.error("Biblioteca 'openpyxl' não encontrada. Instale com 'pip install openpyxl'. Tentando com 'xlsxwriter'.")
+        try:
+            # Fallback para xlsxwriter se openpyxl não estiver instalado
+            # Certifique-se de ter instalado: pip install xlsxwriter
+             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                 df.to_excel(writer, index=False, sheet_name='Resultado')
+        except ImportError:
+             st.error("Nenhuma engine de escrita Excel funcional encontrada (nem 'openpyxl' nem 'xlsxwriter'). Instale uma delas.")
+             return None
+        except Exception as e_xlsx:
+             st.error(f"Erro ao exportar com engine 'xlsxwriter': {e_xlsx}")
+             return None
+    except Exception as e:
+         st.error(f"Erro ao exportar para Excel com engine 'openpyxl': {e}")
+         return None # Retorna None em caso de erro
+
+    processed_data = output.getvalue()
+    return processed_data
+# --- FIM DA MODIFICAÇÃO ---
 
 # --- Interface Principal ---
 st.title("📊 Comparador Interativo de Planilhas Excel D4Exp")
@@ -175,9 +200,7 @@ if df1 is not None and df2 is not None:
                          except Exception as e: st.error(f"Falha ao converter chave '{key_col}': {e}"); types_ok = False; break
                 if not types_ok: key_columns = []; st.session_state['key_columns_selected'] = False
             else:
-                # Mensagem removida daqui
-                # st.warning("Nenhuma coluna chave selecionada.")
-                st.session_state['key_columns_selected'] = False
+                st.session_state['key_columns_selected'] = False # Apenas atualiza o estado
 
     if key_columns:
         with st.spinner(f"Processando comparação..."):
@@ -189,7 +212,11 @@ if df1 is not None and df2 is not None:
                 common_numeric_cols = sorted(list(set(common_cols).intersection(numeric_cols_df1).intersection(numeric_cols_df2).difference(set(key_columns))))
                 if not common_numeric_cols: st.info("Nenhuma col. numérica comum (não-chave) encontrada.")
                 df_comparison, total_changes, rows_only_1, rows_only_2, rows_both = calculate_differences_merged(df_merged, common_numeric_cols, key_columns, common_cols)
-                tab_summary, tab_table, tab_detail, tab_charts = st.tabs(["📊 Resumo & Downloads", "📄 Tabela Comparativa", "🔍 Análise Detalhada", "📈 Gráficos Comparativos"])
+
+                tab_summary, tab_table, tab_detail, tab_charts = st.tabs([
+                    "📊 Resumo & Downloads", "📄 Tabela Comparativa", "🔍 Análise Detalhada", "📈 Gráficos Comparativos"
+                ])
+                # ... (Conteúdo das 4 abas mantido como antes) ...
                 with tab_summary:
                     st.header("Resumo Geral"); col1_summary, col2_summary = st.columns([1, 1]);
                     with col1_summary: st.metric("Linhas Apenas P1", rows_only_1); st.metric("Linhas Apenas P2", rows_only_2); st.metric("Linhas em Ambas", rows_both)
@@ -197,7 +224,11 @@ if df1 is not None and df2 is not None:
                         if common_numeric_cols: st.metric("Aumentos (Num.)", total_changes.get('Aumentou', 0)); st.metric("Diminuições (Num.)", total_changes.get('Diminuiu', 0)); st.metric("Iguais (Num.)", total_changes.get('Igual', 0)); st.metric("NaNs Comp.", total_changes.get('Dados Ausentes', 0))
                         else: st.info("Nenhuma col. numérica comparada.")
                     st.divider(); st.subheader("Downloads")
-                    if not df_comparison.empty: excel_data = to_excel(df_comparison); st.download_button(label="📥 Baixar Tabela Completa (Excel)", data=excel_data, file_name=f"comparacao_{uploaded_file_1.name}_vs_{uploaded_file_2.name}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_excel_comp")
+                    if not df_comparison.empty:
+                        excel_data = to_excel(df_comparison) # Chama a função modificada
+                        if excel_data: # Verifica se a exportação funcionou
+                            st.download_button(label="📥 Baixar Tabela Completa (Excel)", data=excel_data, file_name=f"comparacao_{uploaded_file_1.name}_vs_{uploaded_file_2.name}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="download_excel_comp")
+                        # else: # Erro já foi mostrado dentro de to_excel
                     else: st.warning("Tabela vazia, sem Excel.")
                 with tab_table:
                     st.header("Tabela Comparativa Detalhada"); st.markdown(f"Dados combinados pela(s) chave(s) **{', '.join(key_columns)}**.");
@@ -297,16 +328,14 @@ if df1 is not None and df2 is not None:
             except Exception as e: st.error(f"Erro Comparação: {e}"); st.exception(e)
 
     elif load_attempted:
-        # Mensagem removida daqui
-        # st.warning("Falha ao carregar um ou ambos os arquivos para comparação.")
-        # Os erros específicos de load_data devem ser suficientes
-        pass # Não mostra nada extra se o carregamento falhou (erros já mostrados)
+        # Mensagem genérica removida
+        pass
 
 
 # --- Mensagem inicial ---
 if not uploaded_file_1 or not uploaded_file_2:
     st.info("⬅️ Faça upload das duas planilhas na barra lateral para iniciar a comparação.")
-elif not sheet_name_1 or not sheet_name_2: # Verifica se as abas foram definidas
+elif not sheet_name_1 or not sheet_name_2:
      st.info("⬅️ Selecione as abas desejadas (se aplicável) para cada planilha na barra lateral.")
 
 
