@@ -66,16 +66,16 @@ def load_data(uploaded_file, sheet_name=0):
                         df = pd.read_csv(file_content, sep=sep, engine='python', encoding=enc)
                         # Check if read was successful (more than 1 column usually means success)
                         if df is not None and df.shape[1] > 0:
-                            # Optional: If auto-detect sep=None worked but resulted in 1 col, maybe warn?
-                            if sep is None and df.shape[1] <= 1: continue # Skip if auto detect gives 1 col
-                            # st.success(f"CSV lido com sucesso (enc={enc}, sep='{sep or 'auto'}')")
-                            break # Success
+                             # Optional: If auto-detect sep=None worked but resulted in 1 col, maybe warn?
+                             if sep is None and df.shape[1] <= 1: continue # Skip if auto detect gives 1 col
+                             # st.success(f"CSV lido com sucesso (enc={enc}, sep='{sep or 'auto'}')")
+                             break # Success
                         else: df = None # Reset if read seemed unsuccessful
                     except Exception as e: last_exception = e; df = None
                 if df is not None: break # Break outer loop if successful
             if df is None:
-                st.error(f"Erro final ao ler CSV. Última tentativa falhou: {last_exception}")
-                return None
+                 st.error(f"Erro final ao ler CSV. Última tentativa falhou: {last_exception}")
+                 return None
 
         elif fname.endswith(('.xlsx', '.xls')):
             try: df = pd.read_excel(file_content, engine='openpyxl', sheet_name=sheet_name);
@@ -187,48 +187,29 @@ def to_excel(df):
     output = BytesIO()
     try:
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Resultado')
+             df.to_excel(writer, index=False, sheet_name='Resultado')
     except ImportError: st.error("Biblioteca 'openpyxl' não encontrada."); return None
     except Exception as e: st.error(f"Erro exportar Excel: {e}"); return None
     processed_data = output.getvalue()
     return processed_data
 
-# --- Função de Estilização para Indicadores (CORES MAIS FORTES) --- # <<< MODIFICADO AQUI
+# --- Função de Estilização para Indicadores (CORES MAIS ESCURAS) ---
 def style_indicator(val):
-    """Aplica UMA cor de fundo específica (MAIS FORTE) para CADA status, ajustando cor do texto."""
-    bg_color = None
-    text_color = 'white' # Default para cores fortes de fundo
-
-    if val == 'Aumentou':
-        bg_color = '#FF0000'  # Vermelho Forte (Red)
-    elif val == 'Diminuiu':
-        bg_color = '#008000'  # Verde Forte (Green)
-    elif val == 'Igual':
-        bg_color = '#1E90FF'  # Azul Forte (DodgerBlue)
-        # text_color = 'black' # Poderia considerar texto preto se achar melhor contraste
-    elif val == 'Ausente':
-        bg_color = '#FFA500'  # Laranja Forte (Orange)
-        text_color = 'black' # Laranja pode precisar de texto preto para melhor leitura
-    elif val == 'Erro Coluna':
-        bg_color = '#800080'  # Roxo Forte (Purple)
-    elif val == 'Apenas Plan1':
-        bg_color = '#0000CD'  # Azul Médio Forte (MediumBlue)
-    elif val == 'Apenas Plan2':
-        bg_color = '#8B0000'  # Vermelho Escuro Forte (DarkRed) - Para diferenciar do Aumentou
-
-    # Ajuste final da cor do texto se necessário para casos específicos
-    if val == 'Ausente': text_color = 'black'
-    # Se usar um azul muito claro para 'Igual', pode precisar de texto preto:
-    # if val == 'Igual': text_color = 'black'
+    """Aplica UMA cor de fundo específica (MAIS ESCURA) para CADA status, ajustando cor do texto."""
+    bg_color = None; text_color = 'black'
+    if val == 'Aumentou': bg_color = '#DC143C'; text_color = 'white'      # Crimson
+    elif val == 'Diminuiu': bg_color = '#228B22'; text_color = 'white'    # ForestGreen
+    elif val == 'Igual': bg_color = '#B0C4DE';                             # LightSteelBlue
+    elif val == 'Ausente': bg_color = '#FF8C00'; text_color = 'white'    # DarkOrange
+    elif val == 'Erro Coluna': bg_color = '#8A2BE2'; text_color = 'white'# BlueViolet
+    elif val == 'Apenas Plan1': bg_color = '#6495ED'; text_color = 'white'# CornflowerBlue
+    elif val == 'Apenas Plan2': bg_color = '#00008B'; text_color = 'white'# DarkBlue
 
     if bg_color:
-        style = f'background-color: {bg_color}; color: {text_color};'
-        if val == 'Erro Coluna':
-            style += ' font-weight: bold;' # Mantém destaque para erro
-        return style
-    else:
-        return '' # Retorna string vazia se não houver correspondência
-# --- FIM DA MODIFICAÇÃO --- #
+         style = f'background-color: {bg_color}; color: {text_color};'
+         if val == 'Erro Coluna': style += ' font-weight: bold;'
+         return style
+    else: return ''
 
 # --- Interface Principal ---
 st.title("📊 Comparador Interativo de Planilhas Excel D4Exp")
@@ -395,11 +376,11 @@ if df1 is not None and df2 is not None:
                         # --- FIM Montagem ---
 
                         if not cols_to_show_final:
-                            st.warning("Nenhuma coluna para exibição.")
-                            df_display = pd.DataFrame()
+                             st.warning("Nenhuma coluna para exibição.")
+                             df_display = pd.DataFrame()
                         else:
-                            try: df_display = df_comparison[cols_to_show_final]
-                            except KeyError as e: st.error(f"Erro selecionar colunas: {e}"); df_display = pd.DataFrame()
+                             try: df_display = df_comparison[cols_to_show_final]
+                             except KeyError as e: st.error(f"Erro selecionar colunas: {e}"); df_display = pd.DataFrame()
 
                         indicator_cols_in_view = [c for c in indicator_cols_base if c in df_display.columns]
 
@@ -419,14 +400,14 @@ if df1 is not None and df2 is not None:
                             try: styler = styler.format(format_dict, na_rep="-")
                             except Exception as e_fmt: st.warning(f"Erro formatação numérica: {e_fmt}")
 
-                        # 2. Estilo de Cor (Usando a função style_indicator modificada)
+                        # 2. Estilo de Cor
                         if indicator_cols_in_view:
                             try: styler = styler.applymap(style_indicator, subset=indicator_cols_in_view)
                             except Exception as e_style: st.warning(f"Erro estilo cor: {e_style}")
 
                         # --- Exibição ---
                         if not df_display.empty:
-                            st.dataframe(styler, use_container_width=True, hide_index=True)
+                             st.dataframe(styler, use_container_width=True, hide_index=True)
                         elif cols_to_show_final: st.info("Nenhuma linha.")
                         # else: aviso de colunas
 
@@ -436,63 +417,63 @@ if df1 is not None and df2 is not None:
 
                 with tab_detail:
                     # ... (código inalterado) ...
-                    st.header("Análise Detalhada por Linha");
-                    if df_comparison is not None and not df_comparison.empty:
-                        # ... (código da aba detail como antes) ...
-                        # Mantendo .2f na tabela de detalhes por clareza específica
-                        # ...
-                        try:
-                            temp_col_name = '_selectbox_key'
-                            # (Validações de chave como antes)
-                            if len(key_columns) == 1:
-                                if key_columns[0] in df_comparison.columns: df_comparison[temp_col_name] = df_comparison[key_columns[0]].astype(str)
-                                else: raise KeyError(f"Chave '{key_columns[0]}' não encontrada")
-                            else:
-                                missing_keys = [k for k in key_columns if k not in df_comparison.columns]
-                                if missing_keys: raise KeyError(f"Chaves {missing_keys} não encontradas")
-                                df_comparison[temp_col_name] = df_comparison[key_columns].apply(lambda row: ' | '.join(row.values.astype(str)), axis=1)
+                     st.header("Análise Detalhada por Linha");
+                     if df_comparison is not None and not df_comparison.empty:
+                         # ... (código da aba detail como antes) ...
+                         # Mantendo .2f na tabela de detalhes por clareza específica
+                         # ...
+                         try:
+                             temp_col_name = '_selectbox_key'
+                             # (Validações de chave como antes)
+                             if len(key_columns) == 1:
+                                 if key_columns[0] in df_comparison.columns: df_comparison[temp_col_name] = df_comparison[key_columns[0]].astype(str)
+                                 else: raise KeyError(f"Chave '{key_columns[0]}' não encontrada")
+                             else:
+                                 missing_keys = [k for k in key_columns if k not in df_comparison.columns]
+                                 if missing_keys: raise KeyError(f"Chaves {missing_keys} não encontradas")
+                                 df_comparison[temp_col_name] = df_comparison[key_columns].apply(lambda row: ' | '.join(row.values.astype(str)), axis=1)
 
-                            select_options = sorted(df_comparison[temp_col_name].unique().tolist());
-                            select_options.insert(0, "Selecione...")
-                            selected_key_str = st.selectbox(f"Linha (Chave: {', '.join(key_columns)}):", options=select_options, index=0, key="detail_selection")
+                             select_options = sorted(df_comparison[temp_col_name].unique().tolist());
+                             select_options.insert(0, "Selecione...")
+                             selected_key_str = st.selectbox(f"Linha (Chave: {', '.join(key_columns)}):", options=select_options, index=0, key="detail_selection")
 
-                            if selected_key_str != "Selecione...":
-                                selected_row_data = df_comparison[df_comparison[temp_col_name] == selected_key_str]
-                                if not selected_row_data.empty:
-                                    selected_row = selected_row_data.iloc[0]
-                                    st.write(f"**Detalhes Chave: '{selected_key_str}'**");
-                                    st.metric("Status da Linha", selected_row.get('Status_Linha', 'N/A')); st.divider()
-                                    if selected_row.get('Status_Linha') == 'Ambas Planilhas' and common_numeric_cols:
-                                        plot_data_detail = []; diff_data_row = {}
-                                        for col in common_numeric_cols:
-                                            val1 = selected_row.get(f'{col}_Plan1'); val2 = selected_row.get(f'{col}_Plan2'); abs_diff = selected_row.get(f'{col}_AbsDiff'); perc_diff = selected_row.get(f'{col}_PercDiff (%)'); indicator = selected_row.get(f'{col}_Indicador')
-                                            if pd.notna(val1): plot_data_detail.append({'Coluna': col, 'Valor': val1, 'Planilha': 'P1'})
-                                            if pd.notna(val2): plot_data_detail.append({'Coluna': col, 'Valor': val2, 'Planilha': 'P2'})
-                                            # Detalhes ainda com .2f
-                                            val1_disp = f"{val1:.2f}" if isinstance(val1, (int, float, np.number)) and pd.notna(val1) else str(val1) if pd.notna(val1) else '-';
-                                            val2_disp = f"{val2:.2f}" if isinstance(val2, (int, float, np.number)) and pd.notna(val2) else str(val2) if pd.notna(val2) else '-';
-                                            abs_diff_str = f"{abs_diff:.2f}" if isinstance(abs_diff,(int,float, np.number)) and pd.notna(abs_diff) else '-';
-                                            perc_diff_str = f"{perc_diff:.1f}%" if isinstance(perc_diff,(int,float, np.number)) and np.isfinite(perc_diff) and pd.notna(perc_diff) else ('Inf' if perc_diff == np.inf else ('-Inf' if perc_diff == -np.inf else ('0.0%' if val1==0 and val2==0 else '-'))) # Arredonda % p/ 1 casa aqui tb
-                                            indicator_disp = str(indicator) if pd.notna(indicator) else '-'
-                                            diff_data_row[col] = {'Valor P1': val1_disp, 'Valor P2': val2_disp, 'Dif Abs': abs_diff_str, 'Dif %': perc_diff_str, 'Indicador': indicator_disp}
-                                        if plot_data_detail: df_plot_detail = pd.DataFrame(plot_data_detail); fig_detail = px.bar(df_plot_detail, x='Coluna', y='Valor', color='Planilha', barmode='group', title=f"Comparativo Valores: '{selected_key_str}'", color_discrete_sequence=px.colors.qualitative.Pastel, template="streamlit"); fig_detail.update_layout(xaxis_tickangle=-45); st.plotly_chart(fig_detail, use_container_width=True)
-                                        else: st.info("Sem dados numéricos.")
-                                        st.divider();
-                                        if diff_data_row: st.write(f"**Diferenças Detalhadas:**"); st.dataframe(pd.DataFrame(diff_data_row).T, use_container_width=True)
-                                    elif selected_row.get('Status_Linha') != 'Ambas Planilhas': st.info(f"Linha existe apenas na '{selected_row['Status_Linha']}'."); cols_to_show_single = [c for c in selected_row_data.columns if c != temp_col_name]; st.dataframe(selected_row_data[cols_to_show_single], use_container_width=True, hide_index=True)
-                                    else: st.info("Linha em ambas, sem col. numéricas comuns."); cols_to_show_no_comp = [c for c in selected_row_data.columns if not ('_AbsDiff' in c or '_PercDiff' in c or '_Indicador' in c or temp_col_name in c)]; st.dataframe(selected_row_data[cols_to_show_no_comp], use_container_width=True, hide_index=True)
-                                else: st.error(f"Erro localizar dados '{selected_key_str}'.")
-                            if temp_col_name in df_comparison.columns: df_comparison.drop(columns=[temp_col_name], inplace=True, errors='ignore')
-                        except KeyError as e: st.error(f"Erro Chave/Coluna Detalhes: {e}.")
-                        except Exception as e: st.error(f"Erro Detalhes: {e}"); st.exception(e)
-                    else: st.info("Tabela comparativa vazia.")
+                             if selected_key_str != "Selecione...":
+                                 selected_row_data = df_comparison[df_comparison[temp_col_name] == selected_key_str]
+                                 if not selected_row_data.empty:
+                                     selected_row = selected_row_data.iloc[0]
+                                     st.write(f"**Detalhes Chave: '{selected_key_str}'**");
+                                     st.metric("Status da Linha", selected_row.get('Status_Linha', 'N/A')); st.divider()
+                                     if selected_row.get('Status_Linha') == 'Ambas Planilhas' and common_numeric_cols:
+                                         plot_data_detail = []; diff_data_row = {}
+                                         for col in common_numeric_cols:
+                                             val1 = selected_row.get(f'{col}_Plan1'); val2 = selected_row.get(f'{col}_Plan2'); abs_diff = selected_row.get(f'{col}_AbsDiff'); perc_diff = selected_row.get(f'{col}_PercDiff (%)'); indicator = selected_row.get(f'{col}_Indicador')
+                                             if pd.notna(val1): plot_data_detail.append({'Coluna': col, 'Valor': val1, 'Planilha': 'P1'})
+                                             if pd.notna(val2): plot_data_detail.append({'Coluna': col, 'Valor': val2, 'Planilha': 'P2'})
+                                             # Detalhes ainda com .2f
+                                             val1_disp = f"{val1:.2f}" if isinstance(val1, (int, float, np.number)) and pd.notna(val1) else str(val1) if pd.notna(val1) else '-';
+                                             val2_disp = f"{val2:.2f}" if isinstance(val2, (int, float, np.number)) and pd.notna(val2) else str(val2) if pd.notna(val2) else '-';
+                                             abs_diff_str = f"{abs_diff:.2f}" if isinstance(abs_diff,(int,float, np.number)) and pd.notna(abs_diff) else '-';
+                                             perc_diff_str = f"{perc_diff:.1f}%" if isinstance(perc_diff,(int,float, np.number)) and np.isfinite(perc_diff) and pd.notna(perc_diff) else ('Inf' if perc_diff == np.inf else ('-Inf' if perc_diff == -np.inf else ('0.0%' if val1==0 and val2==0 else '-'))) # Arredonda % p/ 1 casa aqui tb
+                                             indicator_disp = str(indicator) if pd.notna(indicator) else '-'
+                                             diff_data_row[col] = {'Valor P1': val1_disp, 'Valor P2': val2_disp, 'Dif Abs': abs_diff_str, 'Dif %': perc_diff_str, 'Indicador': indicator_disp}
+                                         if plot_data_detail: df_plot_detail = pd.DataFrame(plot_data_detail); fig_detail = px.bar(df_plot_detail, x='Coluna', y='Valor', color='Planilha', barmode='group', title=f"Comparativo Valores: '{selected_key_str}'", color_discrete_sequence=px.colors.qualitative.Pastel, template="streamlit"); fig_detail.update_layout(xaxis_tickangle=-45); st.plotly_chart(fig_detail, use_container_width=True)
+                                         else: st.info("Sem dados numéricos.")
+                                         st.divider();
+                                         if diff_data_row: st.write(f"**Diferenças Detalhadas:**"); st.dataframe(pd.DataFrame(diff_data_row).T, use_container_width=True)
+                                     elif selected_row.get('Status_Linha') != 'Ambas Planilhas': st.info(f"Linha existe apenas na '{selected_row['Status_Linha']}'."); cols_to_show_single = [c for c in selected_row_data.columns if c != temp_col_name]; st.dataframe(selected_row_data[cols_to_show_single], use_container_width=True, hide_index=True)
+                                     else: st.info("Linha em ambas, sem col. numéricas comuns."); cols_to_show_no_comp = [c for c in selected_row_data.columns if not ('_AbsDiff' in c or '_PercDiff' in c or '_Indicador' in c or temp_col_name in c)]; st.dataframe(selected_row_data[cols_to_show_no_comp], use_container_width=True, hide_index=True)
+                                 else: st.error(f"Erro localizar dados '{selected_key_str}'.")
+                             if temp_col_name in df_comparison.columns: df_comparison.drop(columns=[temp_col_name], inplace=True, errors='ignore')
+                         except KeyError as e: st.error(f"Erro Chave/Coluna Detalhes: {e}.")
+                         except Exception as e: st.error(f"Erro Detalhes: {e}"); st.exception(e)
+                     else: st.info("Tabela comparativa vazia.")
 
 
                 with tab_charts:
                     # ... (código inalterado) ...
                     st.header("Visualizações Gráficas (Linhas Correspondentes)")
                     if df_comparison is not None and common_numeric_cols and rows_both > 0:
-                        # ... (código da aba de gráficos como estava) ...
+                         # ... (código da aba de gráficos como estava) ...
                         df_plot_base = df_comparison.loc[df_comparison['Status_Linha'] == 'Ambas Planilhas'].copy()
                         if not df_plot_base.empty:
                             x_axis_label = f"Chave: {', '.join(key_columns)}"
@@ -547,8 +528,8 @@ if df1 is not None and df2 is not None:
                         options = ["Selecione..."] + sorted(plausible_columns)
 
                         if len(options) == 1:
-                            st.warning("Nenhuma coluna de texto/categoria encontrada para classificação.")
-                            coluna_para_classificar = None
+                             st.warning("Nenhuma coluna de texto/categoria encontrada para classificação.")
+                             coluna_para_classificar = None
                         else:
                             coluna_para_classificar = st.selectbox("Coluna com Categorias:", options=options, index=0, key="classify_col_select")
 
@@ -572,7 +553,7 @@ if df1 is not None and df2 is not None:
                                 # --- FIM MODIFICAÇÃO ---
 
                                 if not cols_final_preview:
-                                    st.error("Erro interno: Nenhuma coluna válida para pré-visualização.")
+                                     st.error("Erro interno: Nenhuma coluna válida para pré-visualização.")
                                 elif len(cols_final_preview) != len(set(cols_final_preview)):
                                     st.error(f"Erro interno: Colunas duplicadas detectadas na pré-visualização: {cols_final_preview}")
                                 else:
@@ -630,10 +611,10 @@ st.sidebar.header("Sobre")
 # Use pytz para garantir o fuso horário correto se disponível
 try:
     import pytz
-    tz = pytz.timezone('America/Sao_Paulo') # Fuso de São Paulo
+    tz = pytz.timezone('America/Sao_Paulo')
     now_time = datetime.datetime.now(tz).strftime('%d/%m/%Y %H:%M:%S %Z')
 except ImportError:
-    now_time = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') # Fallback sem pytz
+    now_time = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') # Fallback
 
 st.sidebar.markdown(f"""
 App para comparar planilhas Excel/CSV.
