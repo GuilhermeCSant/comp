@@ -47,6 +47,7 @@ def classificar_categoria(categoria):
 # --- Funções Auxiliares (Existentes) ---
 @st.cache_data
 def load_data(uploaded_file, sheet_name=0):
+    # ... (código inalterado) ...
     if uploaded_file is None: return None
     try:
         file_content = BytesIO(uploaded_file.getvalue()); df = None; fname = uploaded_file.name.lower()
@@ -63,20 +64,22 @@ def load_data(uploaded_file, sheet_name=0):
 
 @st.cache_data
 def get_sheet_names(uploaded_file):
+    # ... (código inalterado) ...
     if uploaded_file is None or not uploaded_file.name.lower().endswith(('.xlsx', '.xls')): return None
     try:
         file_content = BytesIO(uploaded_file.getvalue()); excel_file = pd.ExcelFile(file_content, engine='openpyxl'); return excel_file.sheet_names
     except Exception as e: return None
 
 def compare_structures(df1, df2):
+    # ... (código inalterado) ...
     if df1 is None or df2 is None: return []
     cols1 = set(df1.columns); cols2 = set(df2.columns); common_cols = sorted(list(cols1.intersection(cols2))); return common_cols
 
-# --- calculate_differences_merged CORRIGIDO (PLURAL "Dados Ausentes") ---
+# --- calculate_differences_merged MODIFICADO (Usa "Ausente") ---
 def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, common_cols):
     df_comp = df_merged.copy()
-    # CORREÇÃO 1: Inicialização do dicionário
-    total_changes = {'Aumentou': 0, 'Diminuiu': 0, 'Igual': 0, 'Dados Ausentes': 0} # <-- PLURAL AQUI
+    # MUDANÇA 1: Chave do dicionário
+    total_changes = {'Aumentou': 0, 'Diminuiu': 0, 'Igual': 0, 'Ausente': 0} # <-- MUDADO AQUI
     df_comp.rename(columns={'_merge': 'Status_Linha'}, inplace=True)
     df_comp['Status_Linha'] = df_comp['Status_Linha'].replace({'left_only': 'Apenas Plan1', 'right_only': 'Apenas Plan2', 'both': 'Ambas Planilhas'})
     rows_only_1 = df_comp[df_comp['Status_Linha'] == 'Apenas Plan1'].shape[0]
@@ -110,8 +113,8 @@ def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, co
             indicator = np.select(conditions, choices, default='Verificar NaN')
 
             mask_nan_original = val1.isna() | val2.isna()
-            # CORREÇÃO 2: Atribuição do indicador para NaN
-            indicator[mask_nan_original] = 'Dados Ausentes' # <-- PLURAL AQUI
+            # MUDANÇA 2: Valor do indicador para NaN
+            indicator[mask_nan_original] = 'Ausente' # <-- MUDADO AQUI
 
             comparison_cols_data[abs_diff_col_name].loc[mask_both] = abs_diff
             comparison_cols_data[perc_diff_col_name].loc[mask_both] = perc_diff
@@ -122,8 +125,8 @@ def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, co
             total_changes['Aumentou'] += counts.get('Aumentou', 0)
             total_changes['Diminuiu'] += counts.get('Diminuiu', 0)
             total_changes['Igual'] += counts.get('Igual', 0)
-            # CORREÇÃO 3: Atualização da contagem no dicionário
-            total_changes['Dados Ausentes'] += mask_nan_original.sum() # <-- PLURAL AQUI (Chave)
+            # MUDANÇA 3: Chave do dicionário ao incrementar
+            total_changes['Ausente'] += mask_nan_original.sum() # <-- MUDADO AQUI
         else:
             comparison_cols_data[indicator_col_name].loc[mask_both] = 'Erro Coluna'
 
@@ -139,7 +142,7 @@ def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, co
     for col_name, col_data in comparison_cols_data.items():
         df_comp[col_name] = col_data
 
-    # --- Reordenação das colunas ---
+    # --- Reordenação das colunas (inalterado) ---
     final_ordered_columns = []
     final_ordered_columns.extend(key_columns)
     if 'Status_Linha' in df_comp.columns: final_ordered_columns.append('Status_Linha')
@@ -165,7 +168,7 @@ def calculate_differences_merged(df_merged, common_numeric_cols, key_columns, co
     return df_comp, total_changes, rows_only_1, rows_only_2, rows_both
 
 def to_excel(df):
-    # ... (código da função to_excel sem alterações) ...
+    # ... (código inalterado) ...
     output = BytesIO()
     try:
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -192,7 +195,7 @@ st.title("📊 Comparador Interativo de Planilhas Excel D4Exp")
 st.markdown("Faça o upload de duas planilhas Excel/CSV, selecione as abas e a(s) coluna(s)-chave para iniciar a comparação.")
 
 # --- Logo e Controles na Sidebar ---
-# ... (código da sidebar sem alterações) ...
+# ... (código inalterado) ...
 logo_path = "d4exp_branco.png"
 if os.path.exists(logo_path):
     left_space, img_col, right_space = st.sidebar.columns([1, 2, 1])
@@ -237,7 +240,7 @@ if df1 is not None and df2 is not None:
 
     key_selection_expanded = not bool(st.session_state.get('key_columns_selected', False))
     with st.expander("🔑 Seleção da(s) Coluna(s)-Chave para Comparação", expanded=key_selection_expanded):
-        # ... (código da seleção de chave sem alterações) ...
+        # ... (código inalterado) ...
         st.markdown("Selecione a(s) coluna(s) chave. Devem existir com o **mesmo nome** em ambas.");
         if not common_cols: st.error("Não há colunas comuns."); key_columns = []; st.session_state['key_columns_selected'] = False
         else:
@@ -266,7 +269,7 @@ if df1 is not None and df2 is not None:
                 common_numeric_cols = sorted(list(set(common_cols).intersection(numeric_cols_df1).intersection(numeric_cols_df2).difference(set(key_columns))))
                 if not common_numeric_cols: st.info("Nenhuma col. numérica comum (não-chave) encontrada.")
 
-                # Usa a função corrigida para calcular diferenças
+                # Usa a função modificada para calcular diferenças
                 df_comparison, total_changes, rows_only_1, rows_only_2, rows_both = calculate_differences_merged(df_merged, common_numeric_cols, key_columns, common_cols)
 
                 # --- DEFINIÇÃO DAS ABAS ---
@@ -280,7 +283,7 @@ if df1 is not None and df2 is not None:
 
                 # --- Conteúdo das abas ---
                 with tab_summary:
-                    # --- Aba tab_summary CORRIGIDA (PLURAL "Dados Ausentes") ---
+                    # --- Aba tab_summary MODIFICADA (Usa "Ausente") ---
                     st.header("Resumo Geral"); col1_summary, col2_summary = st.columns([1, 1]);
                     with col1_summary: st.metric("Linhas Apenas P1", rows_only_1); st.metric("Linhas Apenas P2", rows_only_2); st.metric("Linhas em Ambas", rows_both)
                     with col2_summary:
@@ -288,8 +291,8 @@ if df1 is not None and df2 is not None:
                             st.metric("Aumentos (Num.)", total_changes.get('Aumentou', 0))
                             st.metric("Diminuições (Num.)", total_changes.get('Diminuiu', 0))
                             st.metric("Iguais (Num.)", total_changes.get('Igual', 0))
-                            # CORREÇÃO 4: Exibição da métrica
-                            st.metric("NaNs Comp.", total_changes.get('Dados Ausentes', 0)) # <-- PLURAL AQUI
+                            # MUDANÇA 4: Etiqueta e chave da métrica
+                            st.metric("Ausentes (Comp.)", total_changes.get('Ausente', 0)) # <-- MUDADO AQUI
                         else: st.info("Nenhuma col. numérica comparada.")
                     st.divider(); st.subheader("Downloads")
                     if not df_comparison.empty:
@@ -299,7 +302,7 @@ if df1 is not None and df2 is not None:
                     else: st.warning("Tabela vazia, sem Excel.")
 
                 with tab_table:
-                    # ... (código da aba tab_table sem alterações desde a versão com classificação) ...
+                    # ... (código inalterado) ...
                     st.header("Tabela Comparativa Detalhada"); st.markdown(f"Dados combinados pela(s) chave(s) **{', '.join(key_columns)}**.");
                     if not df_comparison.empty:
                         st.write("Opções de Visualização:"); cols_view = st.columns(4); show_plan_vals = cols_view[0].checkbox("Val. Originais", value=True, key="cb_orig_table"); show_abs_diff = cols_view[1].checkbox("Dif. Absoluta", value=False, key="cb_abs_table"); show_perc_diff = cols_view[2].checkbox("Dif. Percentual", value=True, key="cb_perc_table"); show_indicator = cols_view[3].checkbox("Indicador", value=True, key="cb_ind_table")
@@ -307,6 +310,7 @@ if df1 is not None and df2 is not None:
                         if show_plan_vals: cols_to_show.extend([f'{c}_Plan1' for c in common_numeric_cols if f'{c}_Plan1' in df_comparison.columns]); cols_to_show.extend([f'{c}_Plan2' for c in common_numeric_cols if f'{c}_Plan2' in df_comparison.columns])
                         if show_abs_diff: cols_to_show.extend([f'{c}_AbsDiff' for c in common_numeric_cols if f'{c}_AbsDiff' in df_comparison.columns])
                         if show_perc_diff: cols_to_show.extend([f'{c}_PercDiff (%)' for c in common_numeric_cols if f'{c}_PercDiff (%)' in df_comparison.columns])
+                        # A coluna _Indicador agora conterá "Ausente" em vez de "Dados Ausentes"
                         if show_indicator: cols_to_show.extend([f'{c}_Indicador' for c in common_numeric_cols if f'{c}_Indicador' in df_comparison.columns])
                         other_common_cols = [c for c in common_cols if c not in key_columns and c not in common_numeric_cols];
                         for c in other_common_cols:
@@ -319,7 +323,7 @@ if df1 is not None and df2 is not None:
 
 
                 with tab_detail:
-                     # ... (código da aba tab_detail sem alterações desde a versão com classificação) ...
+                     # ... (código inalterado) ...
                     st.header("Análise Detalhada por Linha");
                     if not df_comparison.empty:
                         st.markdown("Selecione uma linha (pela chave) para detalhes.")
@@ -337,6 +341,7 @@ if df1 is not None and df2 is not None:
                                         plot_data_detail = []; diff_data_row = {}
                                         for col in common_numeric_cols:
                                             val1 = selected_row.get(f'{col}_Plan1'); val2 = selected_row.get(f'{col}_Plan2'); abs_diff = selected_row.get(f'{col}_AbsDiff'); perc_diff = selected_row.get(f'{col}_PercDiff (%)'); indicator = selected_row.get(f'{col}_Indicador')
+                                            # A variável 'indicator' agora conterá "Ausente" quando aplicável
                                             if pd.notna(val1): plot_data_detail.append({'Coluna': col, 'Valor': val1, 'Planilha': 'P1'})
                                             if pd.notna(val2): plot_data_detail.append({'Coluna': col, 'Valor': val2, 'Planilha': 'P2'})
                                             val1_disp = f"{val1:.2f}" if isinstance(val1, (int, float)) and pd.notna(val1) else str(val1) if pd.notna(val1) else '-'; val2_disp = f"{val2:.2f}" if isinstance(val2, (int, float)) and pd.notna(val2) else str(val2) if pd.notna(val2) else '-'; abs_diff_str = f"{abs_diff:.2f}" if isinstance(abs_diff,(int,float)) and pd.notna(abs_diff) else '-'; perc_diff_str=f"{perc_diff:.1f}%" if isinstance(perc_diff,(int,float)) and np.isfinite(perc_diff) and pd.notna(perc_diff) else ('Inf' if perc_diff == np.inf else ('-Inf' if perc_diff == -np.inf else '-')); indicator_disp = str(indicator) if pd.notna(indicator) else '-'
@@ -356,7 +361,7 @@ if df1 is not None and df2 is not None:
                     else: st.info("Tabela vazia.")
 
                 with tab_charts:
-                     # ... (código da aba tab_charts sem alterações desde a versão com classificação) ...
+                     # ... (código inalterado) ...
                     st.header("Visualizações Gráficas (Linhas Correspondentes)")
                     if common_numeric_cols and rows_both > 0:
                         df_plot_base = df_comparison.loc[df_comparison['Status_Linha'] == 'Ambas Planilhas'].copy()
@@ -403,7 +408,7 @@ if df1 is not None and df2 is not None:
                     else: st.info("Sem linhas correspondentes para gerar gráficos.")
 
 
-                # --- ABA DE CLASSIFICAÇÃO (Mantendo a versão aprimorada) ---
+                # --- ABA DE CLASSIFICAÇÃO (inalterado) ---
                 with tab_classify:
                     st.header("⚙️ Classificar Categoria Principal / Subcategoria")
 
